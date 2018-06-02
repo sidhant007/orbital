@@ -10,4 +10,4 @@ Also on Github, a PR will only be merged if it has the latest commits of master 
 
 ### By 2 June 
 - [ ] FrontEnd Basic Layout
-- [ ] BackEnd start off the code base of Genetics / Q-learning
+- [ ] BackEnd start off the code base of Q-learning
