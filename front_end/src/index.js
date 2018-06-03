@@ -9,22 +9,25 @@ var cell_color = {
   "E": "White",
 }
 
-class Square extends React.Component {
-  render() {
-    const color = cell_color[this.props.value];
-    return (
-      <button className="square" onClick = {() => this.props.onClick()} 
-          style = {{backgroundColor: color}}>
-        {this.props.value}
-      </button>
-    );
-  }
-}
-
 class Point {
   constructor(x, y) {
     this._x = x;
     this._y = y;
+  }
+}
+
+class Square extends React.Component {
+  render() {
+    const color = cell_color[this.props.value];
+    return (
+      <button className="square" 
+        onClick = {() => this.props.onClick()} 
+        style = {{backgroundColor: color, opacity: this.props.my_opacity}} 
+        onMouseEnter = {() => this.props.onMouseOver()} 
+        >
+        {this.props.value}
+      </button>
+    );
   }
 }
 
@@ -37,6 +40,7 @@ class Board extends React.Component {
     this.state = {
       _squares: Array(64).fill(null), // 8 * 8 grid
       _setup_id: 0,
+      _trail: Array(8).fill(new Point(-1, -1)),
     };
   }
 
@@ -57,10 +61,23 @@ class Board extends React.Component {
     });
   }
 
+  handleOver(i) {
+    const trail = this.state._trail.slice();
+    trail.shift();
+    trail.push(i);
+    this.setState({
+      _squares: this.state._squares,
+      _setup_id: this.state._setup_id,
+      _trail: trail,
+    });
+  }
+
   renderSquare(i) {
     return (<Square
       value = {this.state._squares[i]}
       onClick = {() => this.handleClick(i)}
+      onMouseOver = {() => this.handleOver(i)}
+      my_opacity = {Math.min(1, (11 - this.state._trail.indexOf(i)) * 0.1)}
     />);
   }
 
