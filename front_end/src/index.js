@@ -97,7 +97,7 @@ class Game extends React.Component {
             <ol>{/* TODO */}</ol>
           </div>
         </div>
-        <button className = "start">
+        <button className = "start"> {/*On click should communicate with backend*/}
           Start Simulation
         </button>
       </div>
