@@ -22,17 +22,17 @@ class game {
   nextTurn(player, input, grid_letter) {
     if(input == "MOVE") { //Scope for more rigorous case ?
       var old_coords = player.getCoords();
-      var new_coords = player.playMove();
-      while(!checkCoords(new_coords)) {
+      var new_coords = [];
+      do {
         new_coords = player.playMove();
-      }
+      } while(!checkCoords(new_coords)); 
       updateGrid(old_coords, new_coords, player.getSymbol());
       player.updatePosition(new_coords);
      } else { //Shooting Portal
-      var portal_coords = player.shootPortal();
-      while(!validPortal(portal_coords[0], portal_coords[1])) {
+      var portal_coords = [];
+      do {
         portal_coords = player.shootPortal();
-      }
+      } while(!validPortal(portal_coords[0], portal_coords[1], player)); 
       this.portal1r = portal_coords[0][0];
       this.portal1c = portal_coords[0][1];
       this.portal2r = portal_coords[1][0];
@@ -53,9 +53,13 @@ class game {
       player.updatePosition(portal2_coords);
       updateGrid(player_coords, portal2_coords, player.getSymbol());
     }
+    if(player_coords[0] == this._portal2r && player_coords[1] == this._portal2c) {
+      portal1_coords = [this._portal1r, this._portal1c]; 
+      player.updatePosition(portal1_coords);
+      updateGrid(player_coords, portal1_coords, player.getSymbol());
+    }
   }
 
-  //TO DO: Refactor below 2 methods into 1 maybe...
   updateGrid(old_coords, new_coords, grid_update) {
     this._grid[old_coords[0]][old_coords[1]] = 'O'; //O stands for empty cell
     this._grid[new_coords[0]][new_coords[1]] = grid_update; //U stands for user
@@ -67,9 +71,17 @@ class game {
       this._grid[coord_r][coord_c] != 'X';
   }
 
-  validPortal(portal1_coords, portal2_coords) {
-    return (portal1_coords[0] == this._r || portal1_coords[1] == this._c) &&
-      (portal2_coords[0] == this._r || portal2_coords[1] == this._c);
+// Might refactor if another use case occurs ...
+  validPortal(portal1_coords, portal2_coords, player) {
+    return (portal1_coords[0] == this.player._r || portal1_coords[1] == this.player._c) &&
+      (portal2_coords[0] == this.player._r || portal2_coords[1] == this.player._c) &&
+        this._grid[portal1_coords[0]][portal1_coords[1]] != "X" &&
+	  this._grid[portal2_coords[0]][portal2_coords[1]] != "X" &&
+	    (portal1_coords[0] == this._user._r && portal1_coords[1] == this._user._c ||
+	      portal2_coords[0] == this._user._r && portal2_coords[1] == this._user._c ||
+	        portal1_coords[0] == this._comp._r && portal1_coords[1] == this._comp._c ||
+	          portal2_coords[0] == this._comp._r && portal2_coords[1] == this._comp._c);  
+		  
   }
 
   getReward() {
@@ -93,7 +105,7 @@ class game {
   }
 
   checkLoss() {
-    return this._num_moves < this._move_limit;    
+    return this._num_moves > this._move_limit;    
   }
 
 }
