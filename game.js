@@ -1,67 +1,80 @@
-const WIN_REWARD = 0, LOSS_REWARD = -100, TIME_WASTE_REWARD = -4;
-class game {
+var coords = require('./coords.js')
+const newGrid = (oldGrid) => oldGrid.map((arr) => arr.slice());
+function equalArray(array1, array2) {
+  if (!Array.isArray(array1) && !Array.isArray(array2)) {
+    return array1 === array2;
+  }
+
+  if (array1.length !== array2.length) {
+    return false;
+  }
+
+  for (var i = 0, len = array1.length; i < len; i++) {
+    if (!equalArray(array1[i], array2[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+module.exports = class game {
   
-  constructor(rows, cols, grid, user_coords, comp_coords, exit_coords, move_limit) {
+  constructor(rows, cols, grid, exit_coords, portal1, portal2, portalExists) {
     this._rows = rows;
     this._cols = cols;
     this._grid = grid;
-    this._user = new player(user_coords[0], usery_coords[1], 'U');
-    this._comp = new agent(comp_coords[0], comp_coords[1]);
     this._exit = new coords(exit_coords);
-    this.portal1 = this.portal2 = new coords([-1, -1]);
-    this._num_moves = 0;
-    this._move_limit = move_limit;
-  }
-  
-  nextTurn(user_input, comp_input) {
-    nextTurn(this._user, user_input);
-    nextTurn(this._comp, comp_input);
+    this._portal1 = portal1 || new coords([-1, -1]);
+    this._portal2 = portal2 || new coords([-1, -1]);
+    this._portalExists = portalExists || false;
   }
 
-  nextTurn(player, input, grid_letter) {
-    if(input == "MOVE") { //Scope for more rigorous case ?
-      var old_coords = player.getCoords();
-      var new_coords = [];
-      do {
-        new_coords.update(player.playMove());
-      } while(!checkCoords(new_coords));
-      updateGrid(old_coords, new_coords, player.getSymbol());
-      player.updatePosition(new_coords);
-     } else { //Shooting Portal
-      var portal_coords = [];
-      var portal1_coords = [];
-      var portal2_coords = [];
-      do {
-        portal_coords = player.shootPortal();
-        portal1_coords = portal_coords[0];
-        portal2_coords = portal_coords[1];
-      } while(!validPortal(portal1_coords) || !validPortal(portal2_coords));
-      this._portal1 = portal1_coords;
-      this._portal2 = portal2_coords;
-    }
-    this._num_moves++;
+  equals(other) {
+    return other instanceof game && this._rows == other._rows && this._cols == other._cols && equalArray(this._grid, other._grid) && 
+      this._exit.equals(other._exit) && ((this._portal1.equals(other._portal1) && this._portal2.equals(other._portal2)) ||
+      (this._portal1.equals(other._portal2) && this._portal2.equals(other._portal1))) && this._portalExists == other._portalExists;
   }
 
-  teleport() {
-    atPortal(this._user);
-    atPortal(this._comp);
+  copy() {
+    return new game(this._rows, this._cols, this._grid, this._exit.get(), 
+      this._portal1, this._portal2, this._portalExists);
   }
 
-  atPortal(player) {
-    player_coords = player.getCoords();
-    if(player_coords.getR() == this._portal1.getR() && player_coords.getC() == this._portal1.getC()) {
-      player.updatePosition(portal2_coords);
-      updateGrid(player_coords, portal2_coords, player.getSymbol());
-    }
-    if(player_coords.getR() == this._portal2.getR() && player_coords.getC() == this._portal2.getC()) {
-      player.updatePosition(portal1_coords);
-      updateGrid(player_coords, portal1_coords, player.getSymbol());
-    }
+  addPortals(portal1_coords, portal2_coords) {
+    var new_grid = newGrid(this._grid);
+    new_grid[portal1_coords.getR()][portal1_coords.getC()] = 'P'
+    new_grid[portal2_coords.getR()][portal2_coords.getC()] = 'P'
+    return new game(this._rows, this._cols, new_grid, this._exit.get(), portal1_coords, portal2_coords, true);
+  }
+
+  removePortal(portal_coords) {
+    var new_grid = newGrid(this._grid);
+    new_grid[portal_coords.getR()][portal_coords.getC()] = 'O'
+    return new game(this._rows, this._cols, new_grid, this._exit.get(), false, false, false)
   }
 
   updateGrid(old_coords, new_coords, grid_update) {
-    this._grid[old_coords.getR()][old_coords.getC()] = 'O'; //O stands for empty cell
-    this._grid[new_coords.getR()][new_coords.getC()] = grid_update; //U stands for user
+    var new_grid = newGrid(this._grid);
+    new_grid[old_coords.getR()][old_coords.getC()] = 'O'; //O stands for empty cell
+    new_grid[new_coords.getR()][new_coords.getC()] = grid_update; //U stands for user
+    return new_grid;
+  }
+
+  atPortal(player) {
+    var player_coords = player.getCoords();
+    if(player_coords.equals(this._portal1)) {
+      var new_player = player.updatePosition(this._portal2);
+      var new_game = new game(this._rows, this._cols, this.updateGrid(player_coords, this._portal2, player.getSymbol()),
+        this._exit.get(), this._portal1, this._portal2, this._portalExists).removePortal(this._portal1);
+        return [new_player, new_game]
+    }
+    if(player_coords.equals(this._portal2)) {
+      var new_player = player.updatePosition(this._portal1);
+      var new_game = new game(this._rows, this._cols, this.updateGrid(player_coords, this._portal1, player.getSymbol()),
+        this._exit.get(), this._portal1, this._portal2, this._portalExists).removePortal(this._portal2);
+        return [new_player, new_game]
+    }
+    return [player, this]
   }
 
   checkCoords(coords) {
@@ -72,30 +85,16 @@ class game {
 
 // Might refactor if another use case occurs ...
   validPortal(portal_coords, player) {
-    return (portal_coords.getR() == this.player.getCoords().getR() || portal_coords.getC() == this.player.getCoords().getC()) &&
-      this._grid[portak_coords.getR()][portal_coords.getC()] != "X" &&
-	      (portal_coords.equals(this._user.getCoords()) || 
-	        portal_coords.equals(this._comp.getCoords()));
+    return this._grid[portal_coords.getR()][portal_coords.getC()] != "X";
   }
 
-  getReward() {
-    var comp_coords = this._comp.getCoords();
-    if (checkWin()) {
-      return WIN_REWARD;
-    } else if (checkLoss()) {
-      return LOSS_REWARD;
-    } else {
-      return TIME_WASTE_REWARD * this._num_moves; //Can try rewards based on proximity to exit
+  gameState() {
+    for (var row of this._grid) {
+      var line = ""
+      for (var pos of row) {
+        line += pos + " "
+      }
+      console.log(line)
     }
-  }
-
-  checkWin() {
-    var user_coords = this._user.getCoords();
-    var comp_coords = this._user.getCoords();
-    return user_coords.equals(this._exit) || comp_coords.equals(this._exitr);
-  }
-
-  checkLoss() {
-    return this._num_moves > this._move_limit;    
   }
 }

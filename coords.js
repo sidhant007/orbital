@@ -1,4 +1,4 @@
-class coords {
+module.exports = class coords {
 
   constructor(coord_array) {
     this._r = coord_array[0];
@@ -10,8 +10,7 @@ class coords {
   }
 
   update(new_coord_array) {
-    this._r = new_coord_array[0];
-    this._c = new_coord_array[1];
+    return new coords(new_coord_array[0], new_coord_array[1]);
   }
 
   get() {
@@ -24,5 +23,9 @@ class coords {
   
   getC() {
     return this._c;
+  }
+
+  print() {
+    return "[" + this._r + ", " + this._c + "]";
   }
 }
