@@ -24,7 +24,7 @@ class Square extends React.Component {
         onClick = {() => this.props.onClick()} 
         style = {{backgroundColor: color, opacity: this.props.my_opacity}} 
         onMouseEnter = {() => this.props.onMouseOver()} 
-        >
+      >
         {this.props.value}
       </button>
     );
@@ -81,20 +81,30 @@ class Board extends React.Component {
     />);
   }
 
+  startSim() {
+    for(var i = 0; i < 64; i++) {
+      console.log(this.state._squares[i])
+    }
+  }
 
   render() {
     const status = message[this.state._setup_id];
 
     return (
       <div>
-        <div className="status">{status}</div>
-        {Array(8).fill(null).map((_, i) => 
-          <div className = "board-row">
-            {Array(8).fill(null).map((_, j) => 
-              this.renderSquare(i*8 + j)
-            )}
-          </div>
-        )}
+        <div>
+          <div className="status">{status}</div>
+          {Array(8).fill(null).map((_, i) => 
+            <div className = "board-row">
+              {Array(8).fill(null).map((_, j) => 
+                this.renderSquare(i*8 + j)
+              )}
+            </div>
+          )}
+        </div>
+        <button className = "start" onClick={() => this.startSim()}> {/*On click should communicate with backend*/}
+          Start Simulation
+        </button>
       </div>
     );
   }
@@ -103,20 +113,10 @@ class Board extends React.Component {
 class Game extends React.Component {
   render() {
     return (
-      <div>
-        <div className="game">
-          <div className="game-board">
-            <Board />
-          </div>
-          <div className="game-info">
-            {/*<!-- Don't know this divs use, copied the broad code from a tutorial done earlier */}
-            <div>{/* status */}</div>
-            <ol>{/* TODO */}</ol>
-          </div>
+      <div className="game">
+        <div className="game-board">
+          <Board />
         </div>
-        <button className = "start"> {/*On click should communicate with backend*/}
-          Start Simulation
-        </button>
       </div>
     );
   }
