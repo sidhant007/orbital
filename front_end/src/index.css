@@ -1,11 +1,23 @@
 body {
   font: 14px "Century Gothic", Futura, sans-serif;
-  margin-left: 500px;
-  margin-top: 30px;
 }
 
 ol, ul {
   padding-left: 30px;
+}
+
+.board {
+}
+
+.instruction-board {
+  margin-left: 100px;
+  float: left;
+  width: 500px;
+}
+
+.game-board {
+  margin-left: 100px;
+  float: left;
 }
 
 .board-row:after {
@@ -49,10 +61,6 @@ ol, ul {
 .game {
   display: flex;
   flex-direction: row;
-}
-
-.game-info {
-  margin-left: 20px;
 }
 
 .start {

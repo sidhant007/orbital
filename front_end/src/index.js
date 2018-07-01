@@ -136,8 +136,23 @@ class Board extends React.Component {
     const status = message[this.state._setup_id];
 
     return (
-      <div>
-        <div>
+      <div className="board">
+        <div className="instruction-board">
+          <div className="status">Instructions</div>
+            <ul>
+              <li> U = "User", C = "CPU", P = "Portal", X = "Brick" </li>
+              <li> First construct the map and press start sim when ready to PLAY </li>
+              <li> In a single turn you can do EITHER - </li>
+                <ul>
+                  <li> Move user using "wasd" (w = up, a = left, s = down, d = right) OR </li>
+                  <li> Click on 2 valid cells to create portals </li>
+                </ul>
+              <li> User/CPU can ONLY walk on empty or portal cells. </li>
+              <li> Valid cells for portals created by user must either have the same row or same column as user AND must be an empty cell</li>
+              <li> Objective is that the user/cpu either of the 2 should reach the exit in minimum no. of turns </li>
+            </ul>
+        </div>
+        <div className="game-board">
           <div className="status">{status}</div>
           {Array(8).fill(null).map((_, i) => 
             <div className = "board-row">
@@ -146,10 +161,10 @@ class Board extends React.Component {
               )}
             </div>
           )}
+          <button className = "start" onClick={() => this.startSim()}>
+            Start Simulation
+          </button>
         </div>
-        <button className = "start" onClick={() => this.startSim()}>
-          Start Simulation
-        </button>
       </div>
     );
   }
