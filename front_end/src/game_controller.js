@@ -1,103 +1,90 @@
-const WIN_REWARD = 1000, LOSS_REWARD = 0, TIE_REWARD = 500;
-var game = require('./game.js')
-var player = require('./player.js')
-var agent = require('./agent.js')
-var coords = require('./coords.js')
-
 module.exports = class game_controller {
 	
-	constructor(params) {
-		//console.log(params.game)
-		this._game = params.game != undefined ? params.game.copy() : new game(params.rows, params.cols, params.grid, params.exit_coords,
-			params.portal1, params.portal2, params.portalExists);
-		this._user = params.user || new player(params.user_coords, 'U');
-    this._comp = params.comp || new agent(params.comp_coords, undefined); //Change to agent
-    this._num_moves = params.num_moves || 0;
-    this._move_limit = params.move_limit;
-    this._turn_maker = params.turn_maker || 0;
+	constructor(rows, cols) {
+    this._rows = rows;
+    this._cols = cols;
+    this._turns = 0;
 	}
 
-	equals(other) {
-		return other instanceof game_controller && this._game.equals(other._game) && this._user.equals(other._user)
-			&& this._comp.equals(other._comp) && this._num_moves == other._num_moves && this._move_limit == other._move_limit &&
-			this._turn_maker == other._turn_maker;
-	}
+  valid_portal(user, portal) {
+    if(user[0] === portal[0] && user[1] === portal[1])  return false;
+    return (user[0] === portal[0] || user[1] === portal[1]);
+  }
 
-	copy() {
-	return new game_controller({"rows": this._game.rows, "cols": this._game.cols, "grid": this._game._grid,
-	    "user_coords": this._user.getCoords().get(), "comp_coords": this._comp.getCoords().get(), "exit_coords": this._game._exit.get(), 
-	    "move_limit": this._move_limit});
-	}
+  prettify(grid) {
+    var board = new Array(this._rows * this._cols);
+    for(var i = 0; i < this._rows; i++) {
+      for(var j = 0; j < this._cols; j++) {
+        var tmp = grid[i][j];
+        if(tmp === '?')  tmp = null;
+        board[i * this._cols + j] = tmp;
+      }
+    }
+    return board;
+  }
 
-	afterMove() {
-		var next_turn = this._turn_maker == 0 ? 1 : 0;
-		var result = this._game.atPortal(this._user);
-		var newgc = new game_controller({"game": result[1], "user": result[0], "comp": this._comp, "num_moves": this._num_moves,
-			"move_limit": this._move_limit, "turn_maker": next_turn})
-		result = newgc._game.atPortal(this._comp);
-		return new game_controller({"game": result[1], "user": newgc._user, "comp": result[0], "num_moves": newgc._num_moves + 1, 
-			"move_limit": newgc._move_limit, "turn_maker": newgc._turn_maker});
-	}
+  same_pos(a, b) {
+    return (a[0] === b[0] && a[1] === b[1]);
+  }
 
-	// Add functionality to take input from actual user / frontend
-	// Move away from string matching ...
-	makeTurn(moveType, moveInput, player) {
-		if(moveType == "MOVE") {
-			var new_coords = player.playMove(moveInput);
-			if(this._game.checkCoords(new_coords)) {
-  				return new game_controller({"rows": this._game._rows, "cols": this._game._cols,
-  					"grid": this._game.updateGrid(player.getCoords(), new_coords, player.getSymbol()),
-  					"portal1": this._game._portal1, "portal2": this._game._portal2, "portalExists": this._game._portalExists,
-  					"user": this._turn_maker == 0 ? player.updatePosition(new_coords) : this._user,
-  					"comp": this._turn_maker == 0 ? this._comp : player.updatePosition(new_coords),
-  					"exit_coords": this._game._exit.get(), "num_moves": this._num_moves, "move_limit": this._move_limit, 
-  					"turn_maker": this._turn_maker}).afterMove();
-  			} else {
-  				return -1; //For invalid move to front end
-  			}
-		} else {
-			if(!this._game._portalExists) {
-				var portal1_coords = new coords(moveInput[0]);
-				var portal2_coords = new coords(moveInput[1]);
-				if(this._game.validPortal(portal1_coords) && this._game.validPortal(portal2_coords)) {
-					return new game_controller({"game": this._game.addPortals(portal1_coords, portal2_coords), "user": this._user, "comp": this._comp,
-						"num_moves": this._num_moves, "move_limit": this._move_limit, "turn_maker": this._turn_maker}).afterMove();
-				} else {
-					return -2; //For invalid portal positions to front end
-				}
-			} else {
-				return -3; //If not allowed to shoot portals to front end      
-			}
-		}
-	}
+  move(old_user, new_user, portal, grid, letter) {
+    this._turns++;
+    var new_pos = grid[new_user[0]][new_user[1]];
+    if(new_pos === 'P') {
+      grid[old_user[0]][old_user[1]] = null;
+      if(this.same_pos(portal[0], new_user)) {
+        grid[portal[0][0]][portal[0][1]] = null;
+        grid[portal[1][0]][portal[1][1]] = letter;
+      } else {
+        grid[portal[1][0]][portal[1][1]] = null;
+        grid[portal[0][0]][portal[0][1]] = letter;
+      }
+    } else if(new_pos === 'E') {
+      grid[old_user[0]][old_user[1]] = null;
+      alert("Finished the game in " + this._turns + " moves");
+    } else if(new_pos === null) {
+      grid[old_user[0]][old_user[1]] = null;
+      grid[new_user[0]][new_user[1]] = letter;
+    }
+    return grid;
+  }
 
-	getReward() {
-		var comp_coords = this._comp.getCoords();
-		if (this.checkWin()) {
-		  return WIN_REWARD * (this._move_limit - this._num_moves);
-		} else if (this.checkLoss()) {
-		  return LOSS_REWARD;
-		} else {
-		  return TIE_REWARD;
-		}
-	}
-
-	checkWin() {
-		var user_coords = this._user.getCoords();
-		var comp_coords = this._comp.getCoords();
-		return user_coords.equals(this._game._exit) || comp_coords.equals(this._game._exit);
-	}
-
-	checkLoss() {
-		return this._num_moves > this._move_limit;    
-	}
-
-	getState() {
-		return this;
-	}
-
-	printGame() {
-		this._game.gameState();
-	}
-
+  play_user(turn, board) {
+    var grid = new Array(this._rows);
+    var user = [-1, -1];
+    var cpu = [-1, -1];
+    var portal = [];
+    for(var i = 0; i < this._rows; i++) {
+      grid[i] = new Array(this._cols);
+      for(var j = 0; j < this._cols; j++) {
+        grid[i][j] = board[i * this._cols + j];
+        var tmp = grid[i][j];
+        if(tmp === 'U')      user = [i, j];
+        else if(tmp === 'C') cpu = [i, j];
+        else if(tmp === '?' || tmp === 'P') portal.push([i, j]);
+      }
+    }
+    if(turn === "SHOOT") {
+      var p1 = portal[0];
+      var p2 = portal[1];
+      console.log(portal);
+      if(this.valid_portal(user, p1) && this.valid_portal(user, p2)) {
+        grid[p1[0]][p1[1]] = 'P';
+        grid[p2[0]][p2[1]] = 'P';
+      }
+    } else {
+      var delta = [0, 0];
+      if(turn === "LEFT")        delta[1] = -1;
+      else if(turn === "RIGHT")  delta[1] = 1;
+      else if(turn === "UP")     delta[0] = -1;
+      else if(turn === "DOWN")   delta[0] = 1;
+      var new_user = [user[0] + delta[0], user[1] + delta[1]]
+      if(new_user[0] < 0 || new_user[0] >= this._cols
+        || new_user[1] < 0 || new_user[1] >= this._rows) {
+        return this.prettify(grid);
+      }
+      grid = this.move(user, new_user, portal, grid, 'U');
+    }
+    return this.prettify(grid);
+  }
 }

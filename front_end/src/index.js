@@ -2,19 +2,26 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
+var game_controller = require('./game_controller.js')
+
 var cell_color = {
-  "A": "Yellow",
-  "B": "Blue",
+  "U": "Yellow",
+  "C": "Blue",
   "X": "Red",
   "E": "White",
+  "P": "Pink",
 }
 
-class Point {
-  constructor(x, y) {
-    this._x = x;
-    this._y = y;
-  }
+var dir = {
+  "w": "UP",
+  "a": "LEFT",
+  "s": "DOWN",
+  "d": "RIGHT",
 }
+
+var sim_started = false;
+var portal_cnt = 0;
+var gc = null;
 
 class Square extends React.Component {
   render() {
@@ -31,8 +38,8 @@ class Square extends React.Component {
   }
 }
 
-var setup_component = ['A', 'B', 'E', 'X']
-var message = ["Place player 1", "Place player 2", "Place Exit", "Place brick"]
+var setup_component = ['U', 'C', 'E', 'X']
+var message = ["Place User", "Place Computer", "Place Exit", "Place bricks"]
 
 class Board extends React.Component {
   constructor(props) {
@@ -40,25 +47,60 @@ class Board extends React.Component {
     this.state = {
       _squares: Array(64).fill(null), // 8 * 8 grid
       _setup_id: 0,
-      _trail: Array(8).fill(new Point(-1, -1)),
+      _trail: Array(8).fill(-1),
     };
   }
 
-  get_coord(x) {
-    return new Point(Math.floor(x / 8), x % 8);
+  isValid(x) {
+    return (x === 'w' || x === 'a' || x === 's' || x === 'd') && sim_started;
+  }
+
+  componentDidMount() {
+    window.addEventListener("keydown", (event) => {
+      const setup_id = this.state._setup_id;
+      const trail = this.state._trail.slice();
+      if(this.isValid(event.key)) {
+        this.setState({
+          _squares: gc.play_user(dir[event.key], this.state._squares),
+          _setup_id: setup_id,
+          _trail: trail,
+        });
+      }
+    });
   }
 
   handleClick(i) {
     const squares = this.state._squares.slice();
     const setup_id = this.state._setup_id;
+    const trail = this.state._trail.slice();
     if(squares[i]) {
       return ;
     }
-    squares[i] = setup_component[setup_id];
-    this.setState({
-      _squares: squares,
-      _setup_id: Math.min(3, setup_id + 1),
-    });
+    if(sim_started) {
+      portal_cnt++;
+      squares[i] = '?';
+      this.setState({
+        _squares: squares,
+        _setup_id: setup_id,
+        _trail: trail,
+      });
+      if(portal_cnt === 2) {
+        this.setState({
+          _squares: gc.play_user("SHOOT", squares),
+          _setup_id: setup_id,
+          _trail: trail,
+        });
+        portal_cnt = 0;
+      }
+    }
+    else {
+      squares[i] = setup_component[setup_id];
+      this.setState({
+        _squares: squares,
+        _setup_id: Math.min(3, setup_id + 1),
+        _trail: trail,
+      });
+    }
   }
 
   handleOver(i) {
@@ -82,9 +124,12 @@ class Board extends React.Component {
   }
 
   startSim() {
-    for(var i = 0; i < 64; i++) {
-      console.log(this.state._squares[i])
+    if(this.state._setup_id < 3) {
+      alert("The board is incomplete!! Please fill in all the details.")
+      return ;
     }
+    sim_started = true;
+    gc = new game_controller(8, 8);
   }
 
   render() {
@@ -102,7 +147,7 @@ class Board extends React.Component {
             </div>
           )}
         </div>
-        <button className = "start" onClick={() => this.startSim()}> {/*On click should communicate with backend*/}
+        <button className = "start" onClick={() => this.startSim()}>
           Start Simulation
         </button>
       </div>
@@ -110,20 +155,8 @@ class Board extends React.Component {
   }
 }
 
-class Game extends React.Component {
-  render() {
-    return (
-      <div className="game">
-        <div className="game-board">
-          <Board />
-        </div>
-      </div>
-    );
-  }
-}
-
 ReactDOM.render(
-  <Game />,
+  <Board />,
   document.getElementById('root')
 );
 
