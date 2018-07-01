@@ -1,6 +1,10 @@
 # orbital
 Orbital 2k18 Project
 
+How to start - 
+- Write "npm start" inside front_end to start on local host.
+- Write "git subtree push --prefix front_end heroku master" in CLI on orbital/ to push to heroku, then access at "https://tragically-whistler-94856.herokuapp.com/"
+
 To detect linting, anti-pattern and stuff - 
 http://jshint.com/install/
 
