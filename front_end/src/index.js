@@ -205,6 +205,7 @@ class Board extends React.Component {
                 </ul>
               <li> User/CPU can ONLY walk on empty or portal cells. </li>
               <li> Valid cells for portals created by user must either have the same row or same column as user AND must be an empty cell</li>
+              <li> At any given instant there can only be a single pair of portal (i.e 2 cells with P) in the game. </li>
               <li> Objective is that the user/cpu either of the two should reach the exit in minimum no. of turns. If no. of turns used exceeds 30, you loose.</li>
               <li> A single turn consists of movement by both the User and the CPU </li>
             </ul>
