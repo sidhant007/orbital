@@ -51,8 +51,7 @@ class Board extends React.Component {
     };
   }
 
-  checkWin() {
-    if(gc === null || !gc._win) return;
+  resetGame() {
     this.setState({
       _squares: Array(64).fill(null),
       _setup_id: 0,
@@ -60,6 +59,16 @@ class Board extends React.Component {
       _sim: false,
     })
     gc = null;
+  }
+
+  checkWinLoose() {
+    if(gc != null && gc._win) {
+      alert("You won the game in " + gc._turns + " moves");
+      this.resetGame();
+    } else if(gc != null && gc._turns > 30) {
+      alert("You lost the game since you exceeded the prescribed 30 turns limit");
+      this.resetGame();
+    }
   }
 
   isValid(x) {
@@ -77,7 +86,7 @@ class Board extends React.Component {
           _trail: trail,
           _sim: this.state._sim,
         });
-        this.checkWin();
+        this.checkWinLoose();
       }
     });
   }
@@ -106,7 +115,7 @@ class Board extends React.Component {
           _sim: this.state._sim,
         });
         portal_cnt = 0;
-        this.checkWin();
+        this.checkWinLoose();
       }
     }
     else {
@@ -179,6 +188,7 @@ class Board extends React.Component {
     return (
       <div className="board">
         <div className="instruction-board">
+          <div className="status-heading">Portal</div>
           <div className="status">Instructions</div>
             <ul>
               <li> U = "User", C = "CPU", E = "Exit", P = "Portal", X = "Brick" </li>
@@ -195,7 +205,8 @@ class Board extends React.Component {
                 </ul>
               <li> User/CPU can ONLY walk on empty or portal cells. </li>
               <li> Valid cells for portals created by user must either have the same row or same column as user AND must be an empty cell</li>
-              <li> Objective is that the user/cpu either of the 2 should reach the exit in minimum no. of turns </li>
+              <li> Objective is that the user/cpu either of the two should reach the exit in minimum no. of turns. If no. of turns used exceeds 30, you loose.</li>
+              <li> A single turn consists of movement by both the User and the CPU </li>
             </ul>
         </div>
         <div className="game-board">
@@ -224,4 +235,3 @@ ReactDOM.render(
   <Board />,
   document.getElementById('root')
 );
-

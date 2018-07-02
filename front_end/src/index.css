@@ -31,6 +31,13 @@ ol, ul {
   font-size: 30px;
 }
 
+.status-heading {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 50px;
+  color: Blue;
+}
+
 .status-left {
   float: left;
   margin-bottom: 10px;
