@@ -31,6 +31,18 @@ ol, ul {
   font-size: 30px;
 }
 
+.status-left {
+  float: left;
+  margin-bottom: 10px;
+  font-size: 30px;
+}
+
+.status-right {
+  text-align: right;
+  margin-bottom: 10px;
+  font-size: 30px;
+}
+
 .square {
   background: LightGreen;
   border: 1px solid #999; 
@@ -66,9 +78,20 @@ ol, ul {
 .start {
   text-align: center;
   background: Gold;
-  margin-left: 150px;
+  margin-left: 50px;
   margin-top: 20px;
   font-size: 30px;
   height: 100px;
   width: 200px;
+}
+
+.use-preset{
+  float: left;
+  text-align: center;
+  background: LightBlue;
+  margin-left: 0px;
+  margin-top: 40px;
+  font-size: 15px;
+  height: 40px;
+  width: 100px;
 }

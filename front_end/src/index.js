@@ -19,7 +19,6 @@ var dir = {
   "d": "RIGHT",
 }
 
-var sim_started = false;
 var portal_cnt = 0;
 var gc = null;
 
@@ -48,11 +47,23 @@ class Board extends React.Component {
       _squares: Array(64).fill(null), // 8 * 8 grid
       _setup_id: 0,
       _trail: Array(8).fill(-1),
+      _sim: false,
     };
   }
 
+  checkWin() {
+    if(gc === null || !gc._win) return;
+    this.setState({
+      _squares: Array(64).fill(null),
+      _setup_id: 0,
+      _trail: Array(8).fill(-1),
+      _sim: false,
+    })
+    gc = null;
+  }
+
   isValid(x) {
-    return (x === 'w' || x === 'a' || x === 's' || x === 'd') && sim_started;
+    return (x === 'w' || x === 'a' || x === 's' || x === 'd') && this.state._sim;
   }
 
   componentDidMount() {
@@ -64,7 +75,9 @@ class Board extends React.Component {
           _squares: gc.play_user(dir[event.key], this.state._squares),
           _setup_id: setup_id,
           _trail: trail,
+          _sim: this.state._sim,
         });
+        this.checkWin();
       }
     });
   }
@@ -76,21 +89,24 @@ class Board extends React.Component {
     if(squares[i]) {
       return ;
     }
-    if(sim_started) {
+    if(this.state._sim) {
       portal_cnt++;
       squares[i] = '?';
       this.setState({
         _squares: squares,
         _setup_id: setup_id,
         _trail: trail,
+        _sim: this.state._sim,
       });
       if(portal_cnt === 2) {
         this.setState({
           _squares: gc.play_user("SHOOT", squares),
           _setup_id: setup_id,
           _trail: trail,
+          _sim: this.state._sim,
         });
         portal_cnt = 0;
+        this.checkWin();
       }
     }
     else {
@@ -99,6 +115,7 @@ class Board extends React.Component {
         _squares: squares,
         _setup_id: Math.min(3, setup_id + 1),
         _trail: trail,
+        _sim: this.state._sim,
       });
     }
   }
@@ -111,6 +128,7 @@ class Board extends React.Component {
       _squares: this.state._squares,
       _setup_id: this.state._setup_id,
       _trail: trail,
+      _sim: this.state._sim,
     });
   }
 
@@ -128,21 +146,49 @@ class Board extends React.Component {
       alert("The board is incomplete!! Please fill in all the details.")
       return ;
     }
-    sim_started = true;
+    this.setState({
+      _squares: this.state._squares,
+      _setup_id: this.state._setup_id,
+      _trail: this.state._trail,
+      _sim: true,
+    })
     gc = new game_controller(8, 8);
+  }
+
+  setupPreset() {
+    const squares = Array(64).fill(null);
+    const trail = this.state._trail.slice();
+    squares[0] = 'U';
+    squares[1] = 'X';
+    squares[9] = 'X';
+    squares[16] = 'X';
+    squares[20] = 'C';
+    squares[34] = 'E';
+    this.setState({
+      _squares: squares,
+      _setup_id: 3,
+      _trail: trail,
+      _sim: this.state._sim,
+    })
   }
 
   render() {
     const status = message[this.state._setup_id];
+    const turns = gc === null ? 0 : gc._turns;
 
     return (
       <div className="board">
         <div className="instruction-board">
           <div className="status">Instructions</div>
             <ul>
-              <li> U = "User", C = "CPU", P = "Portal", X = "Brick" </li>
-              <li> First construct the map and press start sim when ready to PLAY </li>
-              <li> In a single turn you can do EITHER - </li>
+              <li> U = "User", C = "CPU", E = "Exit", P = "Portal", X = "Brick" </li>
+              <li> First build the map, you can EITHER - </li>
+                <ul>
+                  <li> Construct the map by placing User, CPU, Exit and Bricks OR </li>
+                  <li> Press the button "Set Preset Map" to begin with a sample map. </li>
+                </ul>
+              <li> Now press "Start Simulation" to begin the game </li>
+              <li> In a single turn you can EITHER - </li>
                 <ul>
                   <li> Move user using "wasd" (w = up, a = left, s = down, d = right) OR </li>
                   <li> Click on 2 valid cells to create portals </li>
@@ -153,7 +199,8 @@ class Board extends React.Component {
             </ul>
         </div>
         <div className="game-board">
-          <div className="status">{status}</div>
+          <div className="status-left">{status}</div>
+          <div className="status-right">#Turns: {turns}</div>
           {Array(8).fill(null).map((_, i) => 
             <div className = "board-row">
               {Array(8).fill(null).map((_, j) => 
@@ -161,7 +208,10 @@ class Board extends React.Component {
               )}
             </div>
           )}
-          <button className = "start" onClick={() => this.startSim()}>
+          <button className="use-preset" onClick={() => this.setupPreset()} disabled={this.state._sim}>
+            Set Preset Map
+          </button>
+          <button className="start" onClick={() => this.startSim()} disabled={this.state._sim}>
             Start Simulation
           </button>
         </div>

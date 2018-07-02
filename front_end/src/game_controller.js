@@ -4,6 +4,7 @@ module.exports = class game_controller {
     this._rows = rows;
     this._cols = cols;
     this._turns = 0;
+    this._win = false;
 	}
 
   valid_portal(user, portal) {
@@ -42,9 +43,12 @@ module.exports = class game_controller {
     } else if(new_pos === 'E') {
       grid[old_user[0]][old_user[1]] = null;
       alert("Finished the game in " + this._turns + " moves");
+      this._win = true;
     } else if(new_pos === null) {
       grid[old_user[0]][old_user[1]] = null;
       grid[new_user[0]][new_user[1]] = letter;
+    } else {
+      this._turns--;
     }
     return grid;
   }
@@ -67,10 +71,10 @@ module.exports = class game_controller {
     if(turn === "SHOOT") {
       var p1 = portal[0];
       var p2 = portal[1];
-      console.log(portal);
       if(this.valid_portal(user, p1) && this.valid_portal(user, p2)) {
         grid[p1[0]][p1[1]] = 'P';
         grid[p2[0]][p2[1]] = 'P';
+        this._turns++;
       }
     } else {
       var delta = [0, 0];
