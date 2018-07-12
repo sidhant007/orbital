@@ -73,8 +73,3 @@ module.exports = {"getAllStates": function(game_controller, depth) {
 	}
 	return allStates;
 }}
-
-
-
-
-
