@@ -9,7 +9,7 @@ const copyGrid = (oldGrid) => oldGrid.map((arr) => arr.slice());
 
 function updateGrid(grid, old_coords, new_coords, grid_update) {
   var new_grid = copyGrid(grid)
-  new_grid[old_coords.getR()][old_coords.getC()] = null; 
+  new_grid[old_coords.getR()][old_coords.getC()] = null;
   new_grid[new_coords.getR()][new_coords.getC()] = grid_update; 
   return new_grid;
 }
@@ -26,6 +26,10 @@ function removePortalFromGrid(grid, portal1_coords, portal2_coords) {
   new_grid[portal1_coords.getR()][portal1_coords.getC()] = null
   new_grid[portal2_coords.getR()][portal2_coords.getC()] = null
   return new_grid;
+}
+
+function swap(player) {
+  return player == 'C' ? 'U' : 'C';
 }
 
 module.exports = class game_state {
@@ -52,7 +56,7 @@ module.exports = class game_state {
   }
 
   nextState(move) {
-    return new game_state(this.playMove(move), this.player_turn == "C" ? "U" : "C", this.no_turns + 1)
+    return new game_state(this.playMove(move), swap(this.player_turn), this.no_turns + 1)
   }
 
   parse_grid() {
@@ -84,32 +88,41 @@ module.exports = class game_state {
     var portal1_coords = grid_properties.portal1_coords
     var portal2_coords = grid_properties.portal2_coords
     var bfs_q = [exit_coords];
+    var visited = []
+    var portal_considered = false
     var num_iterations = 0
     while(bfs_q.length > 0) {
       var current_coords = bfs_q.shift()
+      visited.push(current_coords)
       var cur_row = current_coords.getR()
       var cur_col = current_coords.getC()
-      if(cur_row >= 0 && cur_row < this.grid.length &&
-        cur_col >= 0 && cur_col < this.grid[0].length) {
-        if(this.grid[cur_row][cur_col] == 'C' || this.grid[cur_row][cur_col] == 'U') {
-          break;
-        } else if(this.grid[cur_row][cur_col] == 'P') {
-          if(portal1_coords.equals(current_coords)) {
-            bfs_q.push(portal2_coords)
-          } else {
-            bfs_q.push(portal1_coords)
-          }
+      if(this.grid[cur_row][cur_col] == 'C' || this.grid[cur_row][cur_col] == 'U') {
+        break;
+      } else if(this.grid[cur_row][cur_col] == 'P' && !portal_considered) {
+        if(portal1_coords.equals(current_coords)) {
+          bfs_q.push(portal2_coords)
         } else {
-          for (var i of range(0, 4)) {
-            bfs_q.push(new coords([cur_row + dy[i], cur_col + dx[i]]))
+          bfs_q.push(portal1_coords)
+        }
+        portal_considered = true
+      } else {
+        for (var i of range(0, 4)) {
+          var new_coords = new coords([cur_row + dy[i], cur_col + dx[i]])
+          if(cur_row + dy[i] >= 0 && cur_row + dy[i] < this.grid.length &&
+            cur_col + dx[i] >= 0 && cur_col + dx[i] < this.grid[0].length && 
+            (!visited.filter((coords) => coords.equals(new_coords)).length > 0 &&
+            !bfs_q.filter((coords) => coords.equals(new_coords)).length > 0) &&
+            this.grid[cur_row + dy[i]][cur_col + dx[i]] != 'X')  {
+              bfs_q.push(new_coords)
           }
         }
-        num_iterations++
-      } else {
-        continue;
       }
+      // console.log("BFS Queue: ")
+      // console.log(bfs_q)
+      num_iterations++
     }
-    return Math.min((num_iterations / total_number_of_moves - this.no_turns), 1)
+    //console.log(num_iterations)
+    return Math.min((num_iterations / (total_number_of_moves - this.no_turns)), 1)
   }
 
 
@@ -173,21 +186,58 @@ module.exports = class game_state {
     var comp_coords = grid_properties.comp_coords
 
     var cur_player_coords = this.player_turn == "C" ? comp_coords : user_coords;
+    var other_player_coords = this.player_turn == "C" ? user_coords : comp_coords;
     var moves_array = []
     //Checking and adding
-    moves_array.push(cur_player_coords.getC() == 0 ? [] : ["MOVE", "LEFT"])
-    moves_array.push(cur_player_coords.getC() == this.grid[0].length ? [] : ["MOVE", "RIGHT"])
-    moves_array.push(cur_player_coords.getR() == 0 ? [] : ["MOVE", "UP"])
-    moves_array.push(cur_player_coords.getC() == this.grid.length ? [] : ["MOVE", "DOWN"])
+
+    if(cur_player_coords.getC() != 0) {
+      var left_coords = cur_player_coords.left()
+      var to_left = this.grid[left_coords.getR()][left_coords.getC()]
+      if(to_left == null || to_left == 'P' || to_left == 'E') {
+        moves_array.push(["MOVE", "LEFT"])
+      }
+    }
+
+    if(cur_player_coords.getC() != this.grid[0].length - 1) {
+      var right_coords = cur_player_coords.right()
+      var to_right = this.grid[right_coords.getR()][right_coords.getC()]
+      if(to_right == null || to_right == 'P' || to_right == 'E') {
+        moves_array.push(["MOVE", "RIGHT"])
+      }
+    }
+
+    if(cur_player_coords.getR() != 0) {
+      var up_coords = cur_player_coords.up()
+      var to_up = this.grid[up_coords.getR()][up_coords.getC()]
+      if(to_up == null || to_up == 'P' || to_up == 'E') {
+        moves_array.push(["MOVE", "UP"])
+      }
+    }
+
+    if(cur_player_coords.getR() != this.grid.length - 1) {
+      var down_coords = cur_player_coords.down()
+      // console.log(cur_player_coords)
+      // console.log(down_coords)
+      // console.log(this.grid)
+      var to_down = this.grid[down_coords.getR()][down_coords.getC()]
+      if(to_down == null || to_down == 'P' || to_down == 'E') {
+        moves_array.push(["MOVE", "DOWN"])
+      }
+    }
 
     if(portal1_coords == null && portal2_coords == null) { //No portals exist
 
       var prow = cur_player_coords.getR();
       var pcol = cur_player_coords.getC();
-      
+
+      //Are we allowing portal creation on other player or exit ? Currently not allowed because causes problem with parsing
+      // and subsequently other functions, but easily changeable
       for (var rown of range(0, this.grid.length)) {
         for(var rown2 of range(rown + 1, this.grid.length)) {
-          if(rown != prow && rown2 != prow && this.grid[rown][pcol] != 'X' && this.grid[rown2, pcol] != 'X') {
+          if(rown != prow && rown2 != prow 
+            && this.grid[rown][pcol] != 'X' && this.grid[rown2][pcol] != 'X' 
+            && this.grid[rown][pcol] != swap(this.player_turn) && this.grid[rown2][pcol] != swap(this.player_turn)
+            && this.grid[rown][pcol] != 'E' && this.grid[rown2][pcol] != 'E') {
             var portal1 = [rown, pcol];
             var portal2 = [rown2, pcol];
             var mi = [portal1, portal2];
@@ -198,7 +248,13 @@ module.exports = class game_state {
 
       for (var coln of range(0, this.grid[0].length)) {
         for(var coln2 of range(coln + 1, this.grid[0].length)) {
-          if(coln != pcol && coln2 != pcol && this.grid[prow][coln] != 'X' && this.grid[prow, coln2] != 'X') {
+          if(coln != pcol && coln2 != pcol && 
+            this.grid[prow][coln] != 'X' && this.grid[prow][coln2] != 'X' && 
+            this.grid[prow][coln] != swap(this.player_turn) && this.grid[prow][coln2] != swap(this.player_turn)
+            && this.grid[rown][pcol] != 'E' && this.grid[rown2][pcol] != 'E') {
+            // console.log(this.grid[prow][coln])
+            // console.log(this.grid[prow][coln2])
+            // console.log(swap(this.player_turn))
             var portal1 = [prow, coln];
             var portal2 = [prow, coln2];
             var mi = [portal1, portal2];
@@ -209,7 +265,10 @@ module.exports = class game_state {
 
       for (var rown of range(0, this.grid.length)) {
         for(var coln of range(0, this.grid[0].length)) {
-          if(rown != prow && coln != pcol && this.grid[rown][pcol] != 'X' && this.grid[prow, coln] != 'X') {
+          if(rown != prow && coln != pcol 
+            && this.grid[rown][pcol] != 'X' && this.grid[prow][coln] != 'X' 
+            && this.grid[rown][pcol] != swap(this.player_turn) && this.grid[prow][coln] != swap(this.player_turn)
+            && this.grid[rown][pcol] != 'E' && this.grid[rown2][pcol] != 'E') {
             var portal1 = [rown, pcol];
             var portal2 = [prow, coln];
             var mi = [portal1, portal2];
