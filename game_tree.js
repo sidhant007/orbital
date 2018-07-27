@@ -19,6 +19,9 @@ function get_best_child(state_list) {
 	var min_score = 2, best_state = null;
 	for (var state of state_list) {
 		var state_score = state.score || state.prob_function()
+		// if(state_score == min_score) {
+		// 	console.log("Tie")
+		// }
 		if(state_score < min_score) {
 			min_score = state_score
 			best_state = state

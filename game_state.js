@@ -2,7 +2,7 @@ var coords = require('./coords.js')
 
 const dx = [1, -1, 0, 0]
 const dy = [0, 0, 1, -1]
-const total_number_of_moves = 30 // Hardcoded ?
+const total_number_of_moves = 10 // Hardcoded ?
 
 const range = (start, end) => Array.from({length: (end - start)}, (v, k) => k + start);
 const copyGrid = (oldGrid) => oldGrid.map((arr) => arr.slice());
@@ -14,10 +14,10 @@ function updateGrid(grid, old_coords, new_coords, grid_update) {
   return new_grid;
 }
 
-function addPortalToGrid(grid, portal1_coords, portal2_coords) {
+function addPortalToGrid(grid, portal1_coords, portal2_coords, exit_coords) {
   var new_grid = copyGrid(grid)
-  new_grid[portal1_coords.getR()][portal1_coords.getC()] = "P"
-  new_grid[portal2_coords.getR()][portal2_coords.getC()] = "P"
+  new_grid[portal1_coords.getR()][portal1_coords.getC()] = portal1_coords.equals(exit_coords) ? "P / E" : "P"
+  new_grid[portal2_coords.getR()][portal2_coords.getC()] = portal2_coords.equals(exit_coords) ? "P / E" : "P"
   return new_grid;
 }
 
@@ -52,7 +52,7 @@ module.exports = class game_state {
     this.no_turns = no_turns;
     this.child_list = []
     this.best_child = null
-    this.score = 0
+    this.score = -1
   }
 
   nextState(move) {
@@ -63,7 +63,7 @@ module.exports = class game_state {
     this.no_turns = 0
     this.child_list = []
     this.best_child = null
-    this.score = 0
+    this.score = -1
   }
 
   parse_grid() {
@@ -82,6 +82,24 @@ module.exports = class game_state {
               portal2_coords = current_coords;
             }
             break;
+          default: 
+            if(this.grid[row][col] != null && this.grid[row][col].indexOf("/") > -1) {
+              var first_char = this.grid[row][col].split(" / ")[0]
+              exit_coords = current_coords
+              switch(first_char) {
+                case 'C': comp_coords = current_coords; break;
+                case 'U': user_coords = current_coords; break;
+                case 'P':
+                  if(portal1_coords == null) {
+                    portal1_coords = current_coords;
+                  } else {
+                    portal2_coords = current_coords;
+                  }
+                  break;
+                default: break;
+              }
+            }
+            break;
         } 
       }
     }
@@ -91,15 +109,12 @@ module.exports = class game_state {
 
   prob_function() {
     var grid_properties = this.parse_grid()
+    //console.log(this.grid)
     var exit_coords = grid_properties.exit_coords
-    if(total_number_of_moves - this.no_turns == 0) { //Corner case mentioned below handled ?
-      return 1
-    }
-    if(exit_coords == null) { //Corner case where portal on exit but no moves left
-      return 0;
-    }
     var portal1_coords = grid_properties.portal1_coords
     var portal2_coords = grid_properties.portal2_coords
+    var user_coords = grid_properties.user_coords
+    var comp_coords = grid_properties.comp_coords
     var bfs_q = [[exit_coords, 0]];
     var visited = []
     var portal_considered = false
@@ -112,11 +127,11 @@ module.exports = class game_state {
       visited.push(current_coords)
       var cur_row = current_coords.getR()
       var cur_col = current_coords.getC()
-      if(this.grid[cur_row][cur_col] == 'C' || this.grid[cur_row][cur_col] == 'U') {
+      if(current_coords.equals(user_coords) || current_coords.equals(comp_coords)) {
         // console.log("Done")
         // console.log(bfs_q) 
         num_moves = moves_till_now
-        bfs_q.length = 0
+        // bfs_q.length = 0
         break;
       } else if(this.grid[cur_row][cur_col] == 'P' && !portal_considered) {
         // console.log("At portal")
@@ -180,17 +195,31 @@ module.exports = class game_state {
           break;
       }
       if(new_coords.equals(portal1_coords)) {
-        return updateGrid(removePortalFromGrid(current_grid, portal1_coords, portal2_coords), 
-          cur_player_coords, portal2_coords, this.player_turn)
+        if(portal2_coords.equals(exit_coords)) {
+          return updateGrid(removePortalFromGrid(current_grid, portal1_coords, portal2_coords), 
+            cur_player_coords, portal2_coords, this.player_turn + " / E")
+        } else {
+          return updateGrid(removePortalFromGrid(current_grid, portal1_coords, portal2_coords), 
+            cur_player_coords, portal2_coords, this.player_turn)
+        }
       } else if(new_coords.equals(portal2_coords)) {
-        return updateGrid(removePortalFromGrid(current_grid, portal1_coords, portal2_coords), 
-          cur_player_coords, portal1_coords, this.player_turn)
+        if(portal1_coords.equals(exit_coords)) {
+          return updateGrid(removePortalFromGrid(current_grid, portal1_coords, portal2_coords), 
+            cur_player_coords, portal1_coords, this.player_turn + " / E")
+        } else {
+          return updateGrid(removePortalFromGrid(current_grid, portal1_coords, portal2_coords), 
+            cur_player_coords, portal1_coords, this.player_turn)
+        }
       } else {
-        return updateGrid(current_grid, cur_player_coords, new_coords, this.player_turn)
+        if(new_coords.equals(exit_coords)) {
+          return updateGrid(current_grid, cur_player_coords, new_coords, this.player_turn + " / E")
+        } else {
+          return updateGrid(current_grid, cur_player_coords, new_coords, this.player_turn)
+        }
       }
     } else {
       if (portal1_coords == null && portal2_coords == null) { // Hoping this check is done before anyways and always passes
-        return addPortalToGrid(current_grid, new coords(moveInput[0]), new coords(moveInput[1]))
+        return addPortalToGrid(current_grid, new coords(moveInput[0]), new coords(moveInput[1]), exit_coords)
       } else {
         throw "Invalid Portal Co-ordinates"
       }
@@ -198,6 +227,7 @@ module.exports = class game_state {
   }
 
   generate_moves() {
+    //console.log(this.grid)
     var grid_properties = this.parse_grid()
     var exit_coords = grid_properties.exit_coords
     var portal1_coords = grid_properties.portal1_coords
@@ -271,7 +301,7 @@ module.exports = class game_state {
           if(coln != pcol && coln2 != pcol && 
             this.grid[prow][coln] != 'X' && this.grid[prow][coln2] != 'X' && 
             this.grid[prow][coln] != swap(this.player_turn) && this.grid[prow][coln2] != swap(this.player_turn)
-            && this.grid[rown][pcol] != 'E' && this.grid[rown2][pcol] != 'E') {
+            && this.grid[prow][coln] != 'E' && this.grid[prow][coln2] != 'E') {
             // console.log(this.grid[prow][coln])
             // console.log(this.grid[prow][coln2])
             // console.log(swap(this.player_turn))
@@ -288,7 +318,7 @@ module.exports = class game_state {
           if(rown != prow && coln != pcol 
             && this.grid[rown][pcol] != 'X' && this.grid[prow][coln] != 'X' 
             && this.grid[rown][pcol] != swap(this.player_turn) && this.grid[prow][coln] != swap(this.player_turn)
-            && this.grid[rown][pcol] != 'E' && this.grid[rown2][pcol] != 'E') {
+            && this.grid[rown][pcol] != 'E' && this.grid[prow][coln] != 'E') {
             var portal1 = [rown, pcol];
             var portal2 = [prow, coln];
             var mi = [portal1, portal2];
