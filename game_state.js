@@ -59,6 +59,13 @@ module.exports = class game_state {
     return new game_state(this.playMove(move), swap(this.player_turn), this.no_turns + 1)
   }
 
+  reinitialize() {
+    this.no_turns = 0
+    this.child_list = []
+    this.best_child = null
+    this.score = 0
+  }
+
   parse_grid() {
     var comp_coords = null, user_coords = null, exit_coords = null, portal1_coords = null, portal2_coords = null;
     for (var row of range(0, this.grid.length)) {
@@ -85,44 +92,57 @@ module.exports = class game_state {
   prob_function() {
     var grid_properties = this.parse_grid()
     var exit_coords = grid_properties.exit_coords
+    if(total_number_of_moves - this.no_turns == 0) { //Corner case mentioned below handled ?
+      return 1
+    }
+    if(exit_coords == null) { //Corner case where portal on exit but no moves left
+      return 0;
+    }
     var portal1_coords = grid_properties.portal1_coords
     var portal2_coords = grid_properties.portal2_coords
-    var bfs_q = [exit_coords];
+    var bfs_q = [[exit_coords, 0]];
     var visited = []
     var portal_considered = false
-    var num_iterations = 0
+    var num_moves = 0
     while(bfs_q.length > 0) {
-      var current_coords = bfs_q.shift()
+      var current = bfs_q.shift()
+      // console.log(current)
+      var current_coords = current[0]
+      var moves_till_now = current[1]
       visited.push(current_coords)
       var cur_row = current_coords.getR()
       var cur_col = current_coords.getC()
       if(this.grid[cur_row][cur_col] == 'C' || this.grid[cur_row][cur_col] == 'U') {
+        // console.log("Done")
+        // console.log(bfs_q) 
+        num_moves = moves_till_now
+        bfs_q.length = 0
         break;
       } else if(this.grid[cur_row][cur_col] == 'P' && !portal_considered) {
+        // console.log("At portal")
         if(portal1_coords.equals(current_coords)) {
-          bfs_q.push(portal2_coords)
+          bfs_q.push([portal2_coords, moves_till_now + 1])
         } else {
-          bfs_q.push(portal1_coords)
+          bfs_q.push([portal1_coords, moves_till_now + 1])
         }
         portal_considered = true
       } else {
         for (var i of range(0, 4)) {
           var new_coords = new coords([cur_row + dy[i], cur_col + dx[i]])
+          // console.log("Considering " + new_coords.print())
           if(cur_row + dy[i] >= 0 && cur_row + dy[i] < this.grid.length &&
             cur_col + dx[i] >= 0 && cur_col + dx[i] < this.grid[0].length && 
             (!visited.filter((coords) => coords.equals(new_coords)).length > 0 &&
-            !bfs_q.filter((coords) => coords.equals(new_coords)).length > 0) &&
+            !bfs_q.filter((coords) => coords[0].equals(new_coords)).length > 0) &&
             this.grid[cur_row + dy[i]][cur_col + dx[i]] != 'X')  {
-              bfs_q.push(new_coords)
+              // console.log("Adding " + new_coords.print())
+              bfs_q.push([new_coords, moves_till_now + 1])
           }
         }
       }
-      // console.log("BFS Queue: ")
-      // console.log(bfs_q)
-      num_iterations++
     }
-    //console.log(num_iterations)
-    return Math.min((num_iterations / (total_number_of_moves - this.no_turns)), 1)
+    // console.log(num_moves)
+    return Math.min((num_moves / (total_number_of_moves - this.no_turns)), 1)
   }
 
 

@@ -1,4 +1,4 @@
-const num_levels_deep = 3
+const num_levels_deep = 4
 
 function eval(state) {
 	// console.log(state)
@@ -28,7 +28,7 @@ function get_best_child(state_list) {
 }
 
 function get_score(state_list) {
-	//console.log(state_list)
+	// console.log(state_list)
 	var sum = 0
 	for (var state of state_list) {
 		sum += state.score
@@ -50,10 +50,11 @@ module.exports = {"dfs": function(state) {
 		return 0
 	}
 	for (var move of moves_possible) {
-		// console.log(move)
+		 // console.log(move)
 		var next_state = state.nextState(move)
-		// console.log(next_state)
+		 // console.log(next_state)
 		if(isPruned(next_state)) {
+			// console.log("Pruned")
 			continue;
 		}
 		state.child_list.push(next_state)
