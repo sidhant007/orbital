@@ -26,10 +26,10 @@ class Square extends React.Component {
   render() {
     const color = cell_color[this.props.value];
     return (
-      <button className="square" 
-        onClick = {() => this.props.onClick()} 
-        style = {{backgroundColor: color, opacity: this.props.my_opacity}} 
-        onMouseEnter = {() => this.props.onMouseOver()} 
+      <button className="square"
+        onClick = {() => this.props.onClick()}
+        style = {{backgroundColor: color, opacity: this.props.my_opacity}}
+        onMouseEnter = {() => this.props.onMouseOver()}
       >
         {this.props.value}
       </button>
@@ -79,7 +79,7 @@ class Board extends React.Component {
     window.addEventListener("keydown", (event) => {
       const setup_id = this.state._setup_id;
       const trail = this.state._trail.slice();
-      if(this.isValid(event.key)) {
+      if(this.isValid(event.key) == true && portal_cnt != 1) {
         this.setState({
           _squares: gc.play_user(dir[event.key], this.state._squares),
           _setup_id: setup_id,
@@ -87,8 +87,17 @@ class Board extends React.Component {
           _sim: this.state._sim,
         });
         this.checkWinLoose();
+        var hasPortal = 0;
+        for(var i = 0; i < 64; i++) if(this.state._squares[i] === 'P')  hasPortal = 1;
+        if(hasPortal === 0) portal_cnt = 0;
       }
     });
+  }
+
+  valid_cell(portal_coord, squares) {
+    var user_coord = -1;
+    for(var i = 0; i < 64; i++) if (squares[i] === 'U')  user_coord = i;
+    return Math.floor(portal_coord / 8) === Math.floor(user_coord / 8) || (portal_coord % 8) === (user_coord % 8);
   }
 
   handleClick(i) {
@@ -99,8 +108,10 @@ class Board extends React.Component {
       return ;
     }
     if(this.state._sim) {
-      portal_cnt++;
-      squares[i] = '?';
+      if(this.valid_cell(i, squares) === true && portal_cnt <= 1) {
+        portal_cnt++;
+        squares[i] = 'P';
+      }
       this.setState({
         _squares: squares,
         _setup_id: setup_id,
@@ -114,7 +125,6 @@ class Board extends React.Component {
           _trail: trail,
           _sim: this.state._sim,
         });
-        portal_cnt = 0;
         this.checkWinLoose();
       }
     }
@@ -213,9 +223,9 @@ class Board extends React.Component {
         <div className="game-board">
           <div className="status-left">{status}</div>
           <div className="status-right">#Turns: {turns}</div>
-          {Array(8).fill(null).map((_, i) => 
+          {Array(8).fill(null).map((_, i) =>
             <div className = "board-row">
-              {Array(8).fill(null).map((_, j) => 
+              {Array(8).fill(null).map((_, j) =>
                 this.renderSquare(i*8 + j)
               )}
             </div>
