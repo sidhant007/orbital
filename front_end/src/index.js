@@ -87,9 +87,8 @@ class Board extends React.Component {
           _sim: this.state._sim,
         });
         this.checkWinLoose();
-        var hasPortal = 0;
-        for(var i = 0; i < 64; i++) if(this.state._squares[i] === 'P')  hasPortal = 1;
-        if(hasPortal === 0) portal_cnt = 0;
+        portal_cnt = 0;
+        for(var i = 0; i < 64; i++) if(this.state._squares[i] === 'P')  portal_cnt++;
       }
     });
   }

@@ -1,6 +1,6 @@
 const num_levels_deep = 4
 
-function eval(state) {
+function evaluate(state) {
 	// console.log(state)
 	var score = state.prob_function()
 	// console.log(score)
@@ -41,7 +41,7 @@ function get_score(state_list) {
 
 module.exports = {"dfs": function(state) {
 	// console.log(state)
-	var state_eval = eval(state)
+	var state_eval = evaluate(state)
 	if(state_eval.isLeaf) {
 		// console.log("Leaf state")
 		state.score = state_eval.score

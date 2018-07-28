@@ -1,3 +1,6 @@
+var game_state = require("./game_state.js")
+var game_tree = require("./game_tree.js")
+
 const dx = [1, -1, 0, 0]
 const dy = [0, 0, 1, -1]
 
@@ -97,8 +100,6 @@ module.exports = class game_controller {
     var cpu = [-1, -1];
     var exit = [-1, -1];
     var portal = [];
-    var question_mark = false;
-    var portal_mark = false;
     for(var i = 0; i < this._rows; i++) {
       grid[i] = new Array(this._cols);
       for(var j = 0; j < this._cols; j++) {
@@ -107,30 +108,11 @@ module.exports = class game_controller {
         if(tmp === 'U')      user = [i, j];
         else if(tmp === 'C') cpu = [i, j];
         else if(tmp == 'E')  exit = [i, j];
-        else if(tmp === '?' || tmp === 'P') {
-          portal.push([i, j]);
-          if(tmp === '?') question_mark = true;
-          if(tmp === 'P') portal_mark = true;
-        }
-      }
-    }
-    if(question_mark && portal_mark) {
-      portal = [];
-      for(var i = 0; i < this._rows; i++) {
-        for(var j = 0; j < this._cols; j++) {
-          if(grid[i][j] === 'P')  grid[i][j] = null;
-          if(grid[i][j] === '?' || grid[i][j] === 'P') portal.push([i, j]);
-        }
+        else if(tmp === 'P')  portal.push([i, j]);
       }
     }
     if(turn_type === "SHOOT") {
-      var p1 = portal[0];
-      var p2 = portal[1];
       this._turns++;
-      if(this.valid_portal(user, p1) && this.valid_portal(user, p2)) {
-        grid[p1[0]][p1[1]] = 'P';
-        grid[p2[0]][p2[1]] = 'P';
-      }
     } else {
       var delta = [0, 0];
       if(turn_type === "LEFT")        delta[1] = -1;
@@ -141,8 +123,16 @@ module.exports = class game_controller {
       if(this.invalid_pos(grid, new_user))  return this.prettify(grid);
       grid = this.move(user, new_user, portal, grid, 'U');
     }
-    var new_cpu = this.play_cpu(cpu, exit, portal, grid);
-    grid = this.move(cpu, new_cpu, portal, grid, 'C');
+    var cpu_game_state = new game_state(grid, 'C', 0);
+    game_tree.dfs(cpu_game_state);
+    grid = cpu_game_state.best_child.grid;
+    var hasExit = 0;
+    for(var i = 0; i < 8; i++)
+      for(var j = 0; j < 8; j++)
+        if(grid[i][j] === 'E') hasExit = 1;
+    if(hasExit === 0) this._win = true;
+    // var new_cpu = this.play_cpu(cpu, exit, portal, grid);
+    // grid = this.move(cpu, new_cpu, portal, grid, 'C');
     return this.prettify(grid);
   }
 }
