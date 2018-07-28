@@ -111,7 +111,7 @@ module.exports = class game_controller {
         else if(tmp === 'P')  portal.push([i, j]);
       }
     }
-    if(turn_type === "SHOOT") {
+    if(turn_type === "SHOOT" || turn_type === "PASS") {
       this._turns++;
     } else {
       var delta = [0, 0];
@@ -123,6 +123,7 @@ module.exports = class game_controller {
       if(this.invalid_pos(grid, new_user))  return this.prettify(grid);
       grid = this.move(user, new_user, portal, grid, 'U');
     }
+    if(this._win === true)  return this.prettify(grid)
     var cpu_game_state = new game_state(grid, 'C', 0);
     game_tree.dfs(cpu_game_state);
     grid = cpu_game_state.best_child.grid;

@@ -17,6 +17,7 @@ var dir = {
   "a": "LEFT",
   "s": "DOWN",
   "d": "RIGHT",
+  "p": "PASS",
 }
 
 var portal_cnt = 0;
@@ -72,7 +73,7 @@ class Board extends React.Component {
   }
 
   isValid(x) {
-    return (x === 'w' || x === 'a' || x === 's' || x === 'd') && this.state._sim;
+    return (x === 'w' || x === 'a' || x === 's' || x === 'd' || x === 'p') && this.state._sim;
   }
 
   componentDidMount() {
@@ -107,8 +108,10 @@ class Board extends React.Component {
       return ;
     }
     if(this.state._sim) {
+      var hasShot = 0;
       if(this.valid_cell(i, squares) === true && portal_cnt <= 1) {
         portal_cnt++;
+        hasShot = 1;
         squares[i] = 'P';
       }
       this.setState({
@@ -117,7 +120,7 @@ class Board extends React.Component {
         _trail: trail,
         _sim: this.state._sim,
       });
-      if(portal_cnt === 2) {
+      if(portal_cnt === 2 && hasShot === 1) {
         this.setState({
           _squares: gc.play_user("SHOOT", squares),
           _setup_id: setup_id,
@@ -211,6 +214,7 @@ class Board extends React.Component {
                 <ul>
                   <li> Move user using "wasd" (w = up, a = left, s = down, d = right) OR </li>
                   <li> Click on 2 valid cells to create portals </li>
+                  <li> Pass your turn by pressing "p" (It still contributes to the turn)</li>
                 </ul>
               <li> User/CPU can ONLY walk on empty or portal cells. </li>
               <li> Valid cells for portals created by user must either have the same row or same column as user AND must be an empty cell</li>

@@ -1,4 +1,4 @@
-const num_levels_deep = 3 
+const num_levels_deep = 3
 
 function evaluate(state) {
 	// console.log(state)
