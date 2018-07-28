@@ -1,18 +1,23 @@
 # orbital
 Orbital 2k18 Project
 
-How to start - 
+How to start -
 - Write "npm start" inside front_end to start on local host.
 - Write "git subtree push --prefix front_end heroku master" in CLI on orbital/ to push to heroku, then access at "https://tragically-whistler-94856.herokuapp.com/"
 
-To detect linting, anti-pattern and stuff - 
+To detect linting, anti-pattern and stuff -
 http://jshint.com/install/
 
 Also on Github, a PR will only be merged if it has the latest commits of master and has atleast 1 code review.
 
-## To do 
+# Current issues -
+- Both of them don't have ways to reach exit (without portals)
+BFS function fucks up when User && CPU both cannot reach exit. It prunes the state and does not take it.
+- Optimising what does the fucking CPU does.
 
-### Broad Pseudocode - 
+## To do
+
+### Broad Pseudocode -
 ```
 state = {
 	grid: [8][8],
