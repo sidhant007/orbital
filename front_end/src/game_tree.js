@@ -1,9 +1,9 @@
-const num_levels_deep = 4
+const num_levels_deep = 3 
 
 function evaluate(state) {
 	// console.log(state)
 	var score = state.prob_function()
-	// console.log(score)
+	console.log(score)
 	if(score == 1 || score == 0 || state.no_turns >= num_levels_deep) {
 		return {isLeaf: true, score: score}
 	} else {
@@ -31,7 +31,8 @@ function get_best_child(state_list) {
 }
 
 function get_score(state_list) {
-	// console.log(state_list)
+	console.log("inside get_score")
+  console.log(state_list)
 	var sum = 0
 	for (var state of state_list) {
 		sum += state.score
@@ -53,12 +54,10 @@ module.exports = {"dfs": function(state) {
 		return 0
 	}
 	for (var move of moves_possible) {
-		 // console.log(move)
 		var next_state = state.nextState(move)
-		 // console.log(next_state)
-		if(isPruned(next_state)) {
-			// console.log("Pruned")
-			continue;
+		console.log("Next state: " + JSON.stringify(next_state))
+    if(isPruned(next_state)) {
+		  continue;
 		}
 		state.child_list.push(next_state)
 		module.exports.dfs(next_state)

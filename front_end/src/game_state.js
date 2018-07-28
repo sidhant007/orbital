@@ -2,7 +2,7 @@ var coords = require('./coords.js')
 
 const dx = [1, -1, 0, 0]
 const dy = [0, 0, 1, -1]
-const total_number_of_moves = 10 // Hardcoded ?
+const total_number_of_moves = 30 // Hardcoded ?
 
 const range = (start, end) => Array.from({length: (end - start)}, (v, k) => k + start);
 const copyGrid = (oldGrid) => oldGrid.map((arr) => arr.slice());
@@ -72,7 +72,7 @@ module.exports = class game_state {
       for (var col of range(0, this.grid[row].length)) {
         var current_coords = new coords([row, col])
         switch(this.grid[row][col]) {
-          case 'C': comp_coords = current_coords; break;
+         case 'C': comp_coords = current_coords; break;
           case 'U': user_coords = current_coords; break;
           case 'E': exit_coords = current_coords; break;
           case 'P':
@@ -155,8 +155,9 @@ module.exports = class game_state {
           }
         }
       }
+
     }
-    // console.log(num_moves)
+    console.log(visited)
     return Math.min((num_moves / (total_number_of_moves - this.no_turns)), 1)
   }
 
@@ -218,10 +219,14 @@ module.exports = class game_state {
         }
       }
     } else {
-      if (portal1_coords == null && portal2_coords == null) { // Hoping this check is done before anyways and always passes
-        return addPortalToGrid(current_grid, new coords(moveInput[0]), new coords(moveInput[1]), exit_coords)
+      if(moveType == "PASS") {
+        return this.grid
       } else {
-        throw "Invalid Portal Co-ordinates"
+        if (portal1_coords == null && portal2_coords == null) { // Hoping this check is done before anyways and always passes
+          return addPortalToGrid(current_grid, new coords(moveInput[0]), new coords(moveInput[1]), exit_coords)
+        } else {
+          throw "Invalid Portal Co-ordinates"
+        }
       }
     }
   }
@@ -237,7 +242,7 @@ module.exports = class game_state {
 
     var cur_player_coords = this.player_turn == "C" ? comp_coords : user_coords;
     var other_player_coords = this.player_turn == "C" ? user_coords : comp_coords;
-    var moves_array = []
+    var moves_array = [["PASS", null]]
     //Checking and adding
 
     if(cur_player_coords.getC() != 0) {
