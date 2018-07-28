@@ -3,7 +3,6 @@ const num_levels_deep = 3
 function evaluate(state) {
 	// console.log(state)
 	var score = state.prob_function()
-	console.log(score)
 	if(score == 1 || score == 0 || state.no_turns >= num_levels_deep) {
 		return {isLeaf: true, score: score}
 	} else {
@@ -31,17 +30,17 @@ function get_best_child(state_list) {
 }
 
 function get_score(state_list) {
-	console.log("inside get_score")
-  console.log(state_list)
-	var sum = 0
+	var minm = 1;
+  return Math.min(...state_list.map(x => x.score));
+  /*
 	for (var state of state_list) {
-		sum += state.score
+
 	}
 	return sum / state_list.length
+  */
 }
 
 module.exports = {"dfs": function(state) {
-	// console.log(state)
 	var state_eval = evaluate(state)
 	if(state_eval.isLeaf) {
 		// console.log("Leaf state")
@@ -55,13 +54,13 @@ module.exports = {"dfs": function(state) {
 	}
 	for (var move of moves_possible) {
 		var next_state = state.nextState(move)
-		console.log("Next state: " + JSON.stringify(next_state))
     if(isPruned(next_state)) {
 		  continue;
 		}
 		state.child_list.push(next_state)
 		module.exports.dfs(next_state)
 	}
+  console.log(state)
 	state.best_child = get_best_child(state.child_list)
 	state.score = get_score(state.child_list)
 	return 0

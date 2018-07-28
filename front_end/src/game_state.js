@@ -118,7 +118,7 @@ module.exports = class game_state {
     var bfs_q = [[exit_coords, 0]];
     var visited = []
     var portal_considered = false
-    var num_moves = 0
+    var num_moves = 30
     while(bfs_q.length > 0) {
       var current = bfs_q.shift()
       // console.log(current)
@@ -157,7 +157,6 @@ module.exports = class game_state {
       }
 
     }
-    console.log(visited)
     return Math.min((num_moves / (total_number_of_moves - this.no_turns)), 1)
   }
 
