@@ -127,6 +127,9 @@ module.exports = class game_controller {
     var cpu_game_state = new game_state(grid, 'C', 0);
     game_tree.dfs(cpu_game_state);
     grid = cpu_game_state.best_child.grid;
+    cpu_game_state.child_list.sort(function(a, b) {
+      return a.score - b.score;
+    });
     var hasExit = 0;
     for(var i = 0; i < 8; i++)
       for(var j = 0; j < 8; j++)

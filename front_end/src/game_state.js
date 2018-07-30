@@ -46,17 +46,19 @@ module.exports = class game_state {
   // }
 
   // If required -> Required for starting state
-  constructor(grid, player_turn, no_turns) {
+  constructor(grid, player_turn, no_turns, pmitt = false, passed = false) {
     this.grid = grid;
     this.player_turn = player_turn;
     this.no_turns = no_turns;
     this.child_list = []
     this.best_child = null
     this.score = -1
+    this.pmitt = pmitt
+    this.passed = passed
   }
 
   nextState(move) {
-    return new game_state(this.playMove(move), swap(this.player_turn), this.no_turns + 1)
+    return new game_state(this.playMove(move), swap(this.player_turn), this.no_turns + 1, move[0] === "SHOOT", move[0] === "PASS")
   }
 
   reinitialize() {
