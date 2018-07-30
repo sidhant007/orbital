@@ -104,10 +104,8 @@ class Board extends React.Component {
     const squares = this.state._squares.slice();
     const setup_id = this.state._setup_id;
     const trail = this.state._trail.slice();
-    if(squares[i]) {
-      return ;
-    }
     if(this.state._sim) {
+      if(squares[i])  return ;
       var hasShot = 0;
       if(this.valid_cell(i, squares) === true && portal_cnt <= 1) {
         portal_cnt++;
@@ -131,13 +129,26 @@ class Board extends React.Component {
       }
     }
     else {
-      squares[i] = setup_component[setup_id];
-      this.setState({
-        _squares: squares,
-        _setup_id: Math.min(3, setup_id + 1),
-        _trail: trail,
-        _sim: this.state._sim,
-      });
+      if(squares[i] === 'X') {
+        squares[i] = null;
+        this.setState({
+          _squares: squares,
+          _setup_id: Math.min(3, setup_id),
+          _trail: trail,
+          _sum: this.state._sim,
+        });
+      }
+      else if(squares[i] === null) {
+        squares[i] = setup_component[setup_id];
+        this.setState({
+          _squares: squares,
+          _setup_id: Math.min(3, setup_id + 1),
+          _trail: trail,
+          _sim: this.state._sim,
+        });
+      } else {
+        return ;
+      }
     }
   }
 
@@ -176,15 +187,27 @@ class Board extends React.Component {
     gc = new game_controller(8, 8);
   }
 
-  setupPreset() {
+  setupPreset(id) {
     const squares = Array(64).fill(null);
     const trail = this.state._trail.slice();
-    squares[0] = 'U';
-    squares[1] = 'X';
-    squares[9] = 'X';
-    squares[16] = 'X';
-    squares[20] = 'C';
-    squares[34] = 'E';
+    if(id === 1) {
+      squares[0] = 'U';
+      squares[1] = 'X';
+      squares[9] = 'X';
+      squares[16] = 'X';
+      squares[20] = 'C';
+      squares[34] = 'E';
+    } else if (id === 2){
+      squares[3] =  squares[11] = squares[19] = 'X';
+      squares[9] = 'U', squares[14] = 'C';
+      for(var i = 24; i < 32; i++)  squares[i] = 'X';
+      squares[43] = 'E';
+    } else if(id === 3) {
+      squares[0] = 'U';
+      squares[8] = squares[16] = squares[32] = squares[40] = squares[56] = 'X';
+      squares[24] = 'E', squares[48] = 'C';
+      for(var i = 2; i < 8; i++)  squares[i] = 'X';
+    }
     this.setState({
       _squares: squares,
       _setup_id: 3,
@@ -206,8 +229,8 @@ class Board extends React.Component {
               <li> U = "User", C = "CPU", E = "Exit", P = "Portal", X = "Brick" </li>
               <li> First build the map, you can EITHER - </li>
                 <ul>
-                  <li> Construct the map by placing User, CPU, Exit and Bricks OR </li>
-                  <li> Press the button "Set Preset Map" to begin with a sample map. </li>
+                  <li> Construct the map by placing User, CPU, Exit and Bricks( click on a brick cell incase you want to unselect it) OR </li>
+                  <li> Press the button "Preset 1/2/3" to begin with a sample map. </li>
                 </ul>
               <li> Now press "Start Simulation" to begin the game </li>
               <li> In a single turn you can EITHER - </li>
@@ -233,11 +256,20 @@ class Board extends React.Component {
               )}
             </div>
           )}
-          <button className="use-preset" onClick={() => this.setupPreset()} disabled={this.state._sim}>
-            Set Preset Map
+          <button className="use-preset" onClick={() => this.setupPreset(1)} disabled={this.state._sim}>
+            Preset 1
+          </button>
+          <button className="use-preset" onClick={() => this.setupPreset(2)} disabled={this.state._sim}>
+            Preset 2
+          </button>
+          <button className="use-preset" onClick={() => this.setupPreset(3)} disabled={this.state._sim}>
+            Preset 3
           </button>
           <button className="start" onClick={() => this.startSim()} disabled={this.state._sim}>
             Start Simulation
+          </button>
+          <button className="reset" onClick={() => this.resetGame()}>
+            Reset Game
           </button>
         </div>
       </div>
